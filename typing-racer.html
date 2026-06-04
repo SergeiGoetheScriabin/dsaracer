@@ -98,14 +98,25 @@
                 updateStats();
                 document.querySelector('#stats').style.display = 'block';
             }
-            typedText += e.key;
-            updateStats();
-        });
 
-        // Handle backspace
-        inputBox.addEventListener('keydown', (e) => {
+            // Allow Tab key for indentation
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                typedText += '\t';
+                updateStats();
+                return;
+            }
+
+            // Prevent incorrect characters
             if (e.key === 'Backspace') {
                 typedText = typedText.slice(0, -1);
+                updateStats();
+                return;
+            }
+
+            // Only allow correct characters
+            if (typedText.length < targetText.length && e.key === targetText[typedText.length]) {
+                typedText += e.key;
                 updateStats();
             }
         });

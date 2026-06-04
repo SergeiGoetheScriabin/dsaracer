@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DSA Typing Trainer</title>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+
+#stats { margin-bottom: 15px; display: none; }
+
+#targetText {
+    white-space: pre;
+    background: #f4f4f4;
+    padding: 10px;
+}
+
+#inputBox {
+    width: 100%;
+    height: 200px;
+    font-family: monospace;
+    font-size: 16px;
+    white-space: pre;
+}
+</style>
+</head>
+
+<body>
+
+<div id="stats">
+    <div id="wpm">WPM: 0</div>
+    <div id="accuracy">Accuracy: 100%</div>
+    <div id="time">Time: 0s</div>
+</div>
+
+<select id="templateSelector">
+    <option value="binary_search">Binary Search</option>
+    <option value="bfs">BFS</option>
+    <option value="dfs">DFS</option>
+</select>
+
+<pre id="targetText"></pre>
+
+<textarea id="inputBox"></textarea>
+
+<button id="resetBtn">Reset</button>
+
+<script>
+
+/* =========================
+   TEMPLATE DATA
+========================= */
+
+const templates = {
+binary_search:
+`int binarySearch(vector<int>& nums, int target) {
+    int left = 0, right = nums.size() - 1;
+
+    while (left <= right) {
+        int mid = left + (right - left) / 2;
+
+        if (nums[mid] == target) return mid;
+        else if (nums[mid] < target) left = mid + 1;
+        else right = mid - 1;
+    }
+
+    return -1;
+}`,
+
+bfs:
+`void bfs(int start, vector<vector<int>>& adj, vector<bool>& visited) {
+    queue<int> q;
+    q.push(start);
+    visited[start] = true;
+
+    while (!q.empty()) {
+        int node = q.front();
+        q.pop();
+
+        for (int nei : adj[node]) {
+            if (!visited[nei]) {
+                visited[nei] = true;
+                q.push(nei);
+            }
+        }
+    }
+}`,
+
+dfs:
+`void dfs(int node, vector<vector<int>>& adj, vector<bool>& visited) {
+    visited[node] = true;
+
+    for (int nei : adj[node]) {
+        if (!visited[nei]) dfs(nei, adj, visited);
+    }
+}`
+};
+
+/* =========================
+   STATE
+========================= */
+
+let startTime = null;
+let started = false;
+let finished = false;
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const input = document.getElementById("inputBox");
+const targetEl = document.getElementById("targetText");
+const stats = document.getElementById("stats");
+
+const wpmEl = document.getElementById("wpm");
+const accEl = document.getElementById("accuracy");
+const timeEl = document.getElementById("time");
+
+const selector = document.getElementById("templateSelector");
+
+/* =========================
+   LOAD TEMPLATE
+========================= */
+
+let targetText = "";
+
+function load() {
+    targetText = templates[selector.value];
+    targetEl.textContent = targetText;
+
+    input.value = "";
+    input.disabled = false;
+    started = false;
+    finished = false;
+    stats.style.display = "none";
+}
+
+selector.onchange = load;
+load();
+
+/* =========================
+   START TIMER
+========================= */
+
+function start() {
+    started = true;
+    startTime = performance.now();
+    stats.style.display = "block";
+}
+
+/* =========================
+   KEY HANDLER
+========================= */
+
+input.addEventListener("keydown", (e) => {
+    if (finished) return;
+
+    if (!started) start();
+
+    /* TAB */
+    if (e.key === "Tab") {
+        e.preventDefault();
+        tryInsert("    ");
+        return;
+    }
+
+    /* ENTER — read exact newline + indent from targetText */
+    if (e.key === "Enter") {
+        e.preventDefault();
+
+        const pos = input.value.length;
+
+        if (targetText[pos] === "\n") {
+            let toInsert = "\n";
+            let i = pos + 1;
+            while (i < targetText.length && (targetText[i] === " " || targetText[i] === "\t")) {
+                toInsert += targetText[i];
+                i++;
+            }
+            if (targetText.slice(pos, pos + toInsert.length) === toInsert) {
+                input.value += toInsert;
+                update();
+            }
+        }
+
+        return;
+    }
+
+    /* BACKSPACE */
+    if (e.key === "Backspace") {
+        e.preventDefault();
+        input.value = input.value.slice(0, -1);
+        update();
+        return;
+    }
+
+    /* STRICT INPUT */
+    if (e.key.length === 1) {
+        e.preventDefault();
+
+        const current = input.value;
+        const expected = targetText[current.length];
+
+        if (e.key === expected) {
+            insert(e.key);
+        }
+    }
+});
+
+/* =========================
+   INSERT
+========================= */
+
+function insert(str) {
+    input.value += str;
+    update();
+}
+
+function tryInsert(str) {
+    const pos = input.value.length;
+    if (targetText.slice(pos, pos + str.length) === str) {
+        input.value += str;
+        update();
+    }
+}
+
+/* =========================
+   STATS
+========================= */
+
+function update() {
+    const value = input.value;
+
+    if (!started) return;
+
+    const now = performance.now();
+    const seconds = (now - startTime) / 1000;
+
+    const wpm = (value.length / 5) / (seconds / 60 || 1);
+
+    let correct = 0;
+    for (let i = 0; i < value.length; i++) {
+        if (value[i] === targetText[i]) correct++;
+    }
+
+    const acc = value.length === 0 ? 100 : (correct / value.length) * 100;
+
+    wpmEl.textContent = "WPM: " + wpm.toFixed(1);
+    accEl.textContent = "Accuracy: " + acc.toFixed(1) + "%";
+    timeEl.textContent = "Time: " + seconds.toFixed(1) + "s";
+
+    if (value === targetText) {
+        finished = true;
+        input.disabled = true;
+    }
+}
+
+/* =========================
+   RESET
+========================= */
+
+document.getElementById("resetBtn").onclick = () => {
+    input.disabled = false;
+    load();
+};
+
+</script>
+
+</body>
+</html>

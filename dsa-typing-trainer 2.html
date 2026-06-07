@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DSA Typing Trainer</title>
+<style>
+body { font-family: Arial; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+
+#stats { margin-bottom: 15px; display: none; font-family: monospace; }
+#stats div { display: inline-block; margin-right: 20px; }
+
+#targetText {
+    white-space: pre;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    background: #2d2d2d;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* character spans */
+.ch-pending  { color: #888; }
+.ch-correct  { color: #4ec9b0; }
+.ch-wrong    { color: #f44747; background: #3a1a1a; }
+.ch-cursor   { border-left: 2px solid #ddd; }
+
+select, button {
+    background: #3a3a3a;
+    color: #d4d4d4;
+    border: 1px solid #555;
+    padding: 4px 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#message {
+    margin-top: 8px;
+    font-size: 14px;
+    color: #4ec9b0;
+    min-height: 20px;
+}
+</style>
+</head>
+<body>
+
+<div id="stats">
+    <div id="wpm">WPM: 0</div>
+    <div id="accuracy">Accuracy: 100%</div>
+    <div id="time">Time: 0s</div>
+</div>
+
+<select id="templateSelector">
+    <option value="two_pointers">Two Pointers</option>
+    <option value="sliding_window">Sliding Window</option>
+    <option value="prefix_sum">Prefix Sum</option>
+    <option value="hashmap">Hash Map</option>
+    <option value="stack">Stack</option>
+    <option value="monotonic_stack">Monotonic Stack</option>
+    <option value="linked_list_reverse">Reverse Linked List</option>
+    <option value="fast_slow">Fast & Slow Pointer</option>
+    <option value="bfs">BFS</option>
+    <option value="dfs">DFS</option>
+    <option value="toposort">Topological Sort</option>
+    <option value="union_find">Union Find</option>
+    <option value="dijkstra">Dijkstra</option>
+    <option value="prim">Prim</option>
+    <option value="kruskal">Kruskal</option>
+    <option value="backtracking">Backtracking</option>
+    <option value="subsets">Subsets</option>
+    <option value="heap">Heap / Priority Queue</option>
+    <option value="trie">Trie</option>
+    <option value="kadane">Kadane's Algorithm</option>
+    <option value="lis">Longest Increasing Subsequence</option>
+</select>
+<button id="resetBtn">Reset</button>
+
+<pre id="targetText"></pre>
+<div id="message"></div>
+
+<script>
+const templates = {
+
+binary_search:
+`class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target) {
+                return mid;
+            }
+            else if (nums[mid] < target) {
+                left = mid + 1;
+            }
+            else {
+                right = mid - 1;
+            }
+        }
+
+        return -1;
+    }
+};`,
+
+two_pointers:
+`class Solution {
+public:
+    vector<int> solve(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+
+        while (left < right) {
+            int val = nums[left] + nums[right];
+
+            if (val == target) {
+                return {};
+            }
+            else if (val < target) {
+                left++;
+            }
+            else {
+                right--;
+            }
+        }
+
+        return {};
+    }
+};`,
+
+sliding_window:
+`class Solution {
+public:
+    int solve(string s) {
+        unordered_set<char> window;
+
+        int left = 0;
+        int best = 0;
+
+        for (int right = 0; right < s.size(); right++) {
+            while (/* constraint violated */) {
+                // remove s[left] from window/state
+                left++;
+            }
+
+            // add s[right] to window/state
+
+            best = max(best, right - left + 1);
+        }
+
+        return best;
+    }
+};`,
+
+prefix_sum:
+`class Solution {
+public:
+    int pivotIndex(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> prefix(n + 1, 0);
+        
+        for (int i = 0; i < n; i++) {
+            prefix[i + 1] = prefix[i] + nums[i];
+        }
+
+        for (int i = 0; i < n; i++) {
+
+            int leftSum = prefix[i];
+            int rightSum = prefix[n] - prefix[i + 1];
+            
+            
+            if (leftSum == rightSum) {
+                return i;
+            }
+        }
+        return -1;
+    }
+};`,
+
+hashmap:
+`class Solution {
+public:
+    bool containsDuplicate(vector<int>& nums) {
+        unordered_map<int, int> freq;
+
+        for (int num : nums) {
+            freq[num]++;
+
+            if (freq[num] > 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+};`,
+
+stack:
+`class Solution {
+public:
+    bool isValid(string s) {
+        stack<char> st;
+
+        for (char c : s) {
+
+            if (c == '(' ||
+                c == '{' ||
+                c == '[') {
+
+                st.push(c);
+            }
+            else {
+
+                if (st.empty()) {
+                    return false;
+                }
+
+                char top = st.top();
+                st.pop();
+
+                if ((c == ')' && top != '(') ||
+                    (c == '}' && top != '{') ||
+                    (c == ']' && top != '[')) {
+
+                    return false;
+                }
+            }
+        }
+
+        return st.empty();
+    }
+};`,
+
+monotonic_stack:
+`class Solution {
+public:
+    vector<int> dailyTemperatures(
+        vector<int>& temperatures
+    ) {
+
+        vector<int> answer(
+            temperatures.size(),
+            0
+        );
+
+        stack<int> st;
+
+        for (int i = 0;
+             i < temperatures.size();
+             i++) {
+
+            while (!st.empty() &&
+                   temperatures[i] >
+                   temperatures[st.top()]) {
+
+                int idx = st.top();
+                st.pop();
+
+                answer[idx] =
+                    i - idx;
+            }
+
+            st.push(i);
+        }
+
+        return answer;
+    }
+};`,
+
+linked_list_reverse:
+`class Solution {
+public:
+    ListNode* reverseList(ListNode* head) {
+        ListNode* prev = nullptr;
+        ListNode* curr = head;
+
+        while (curr) {
+            ListNode* temp = curr->next;
+
+            curr->next = prev;
+            prev = curr;
+            curr = temp;
+        }
+
+        return prev;
+    }
+};`,
+
+fast_slow:
+`class Solution {
+public:
+    ListNode* middleNode(ListNode* head) {
+        ListNode* slow = head;
+        ListNode* fast = head;
+
+        while (fast && fast->next) {
+            slow = slow->next;
+            fast = fast->next->next;
+        }
+
+        return slow;
+    }
+};`,
+
+bfs:
+`class Solution {
+public:
+    vector<vector<int>> bfs(TreeNode* root) {
+        if (!root) return {};
+
+        vector<vector<int>> res;
+        queue<TreeNode*> q;
+        q.push(root);
+
+        while (!q.empty()) {
+            int size = q.size();
+            vector<int> level;
+
+            for (int i = 0; i < size; i++) {
+                TreeNode* node = q.front();
+                q.pop();
+
+                level.push_back(node->val);
+
+                if (node->left) q.push(node->left);
+                if (node->right) q.push(node->right);
+            }
+
+            res.push_back(level);
+        }
+
+        return res;
+    }
+};`,
+
+dfs:
+`class Solution {
+public:
+    void dfs(int node, vector<vector<int>>& adj, vector<bool>& vis) {
+    if (vis[node]) return;
+
+    vis[node] = true;
+
+    for (int nei : adj[node]) {
+        dfs(nei, adj, vis);
+    }
+};`,
+
+toposort:
+`class Solution {
+public:
+    vector<int> findOrder(
+        int numCourses,
+        vector<vector<int>>& prerequisites
+    ) {
+
+        vector<int> indegree(
+            numCourses,
+            0
+        );
+
+        vector<vector<int>> adj(
+            numCourses
+        );
+
+        queue<int> q;
+
+        for (int i = 0;
+             i < numCourses;
+             i++) {
+
+            if (indegree[i] == 0) {
+                q.push(i);
+            }
+        }
+
+        vector<int> order;
+
+        while (!q.empty()) {
+
+            int node = q.front();
+            q.pop();
+
+            order.push_back(node);
+
+            for (int nei : adj[node]) {
+
+                indegree[nei]--;
+
+                if (indegree[nei] == 0) {
+                    q.push(nei);
+                }
+            }
+        }
+
+        return order;
+    }
+};`,
+
+union_find:
+`class Solution {
+public:
+    vector<int> parent;
+
+    int find(int x) {
+
+        if (parent[x] != x) {
+            parent[x] = find(parent[x]);
+        }
+
+        return parent[x];
+    }
+
+    void unite(int a, int b) {
+        parent[find(a)] =
+            find(b);
+    }
+};`,
+
+dijkstra:
+`class Solution {
+public:
+    int dijkstra(int n, vector<vector<pair<int,int>>>& adj, int src) {
+
+        const int INF = 1e9;
+        vector<int> dist(n + 1, INF);
+        dist[src] = 0;
+
+        priority_queue<pair<int,int>, vector<pair<int,int>>, greater<pair<int,int>>> pq;
+        pq.push({0, src});
+
+        while (!pq.empty()) {
+
+            auto [d, node] = pq.top();
+            pq.pop();
+
+            if (d != dist[node]) continue;
+
+            for (auto [nei, w] : adj[node]) {
+
+                if (dist[node] + w < dist[nei]) {
+                    dist[nei] = dist[node] + w;
+                    pq.push({dist[nei], nei});
+                }
+            }
+        }
+
+        return -1;
+    }
+};`,
+
+prim:
+`class Solution {
+public:
+    int minCostConnectPoints(
+        vector<vector<int>>& points
+    ) {
+
+        priority_queue<
+            pair<int,int>,
+            vector<pair<int,int>>,
+            greater<pair<int,int>>
+        > pq;
+
+        pq.push({0, 0});
+
+        while (!pq.empty()) {
+
+            auto [cost, node] =
+                pq.top();
+
+            pq.pop();
+
+            // prim logic
+        }
+
+        return 0;
+    }
+};`,
+
+kruskal:
+`class Solution {
+public:
+    int minimumCost(
+        int n,
+        vector<vector<int>>& connections
+    ) {
+
+        sort(
+            connections.begin(),
+            connections.end()
+        );
+
+        for (auto& edge :
+             connections) {
+
+            // kruskal logic
+        }
+
+        return 0;
+    }
+};`,
+
+backtracking:
+`class Solution {
+public:
+    vector<vector<int>> answer;
+
+    void backtrack(vector<int>& nums, vector<int>& path) {
+        if (path.size() == nums.size()) {
+            answer.push_back(path);
+            return;
+        }
+
+        for (int num : nums) {
+            path.push_back(num);
+            backtrack(nums, path);
+            path.pop_back();
+        }
+    }
+};`,
+
+subsets:
+`class Solution {
+public:
+    vector<vector<int>> answer;
+    vector<int> subset;
+
+    void dfs(int index, vector<int>& nums) {
+        answer.push_back(subset);
+
+        for (int i = index; i < nums.size(); i++) {
+            subset.push_back(nums[i]);
+
+            dfs(i + 1, nums);
+
+            subset.pop_back();
+        }
+    }
+};`,
+
+heap:
+`class Solution {
+public:
+    int findKthLargest(vector<int>& nums, int k) {
+        priority_queue<int> maxHeap;
+
+        for (int num : nums) {
+            maxHeap.push(num);
+        }
+
+        while (--k) {
+            maxHeap.pop();
+        }
+
+        return maxHeap.top();
+    }
+};`,
+
+trie:
+`class TrieNode {
+public:
+    bool isEnd;
+    TrieNode* children[26];
+
+    TrieNode() {
+        isEnd = false;
+        for (int i = 0; i < 26; i++) {
+            children[i] = nullptr;
+        }
+    }
+};
+
+class Trie {
+private:
+    TrieNode* root;
+
+public:
+    Trie() {
+        root = new TrieNode();
+    }
+
+    void insert(string word) {
+        TrieNode* node = root;
+
+        for (char c : word) {
+            int index = c - 'a';
+
+            if (!node->children[index]) {
+                node->children[index] = new TrieNode();
+            }
+
+            node = node->children[index];
+        }
+
+        node->isEnd = true;
+    }
+
+    bool search(string word) {
+        TrieNode* node = root;
+
+        for (char c : word) {
+            int index = c - 'a';
+
+            if (!node->children[index]) {
+                return false;
+            }
+
+            node = node->children[index];
+        }
+
+        return node->isEnd;
+    }
+
+    bool startsWith(string prefix) {
+        TrieNode* node = root;
+
+        for (char c : prefix) {
+            int index = c - 'a';
+
+            if (!node->children[index]) {
+                return false;
+            }
+
+            node = node->children[index];
+        }
+
+        return true;
+    }
+};`,
+
+kadane:
+`class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+      int ans = INT_MIN;
+      int msf = 0, n = nums.size();
+
+      for(int i = 0; i < n; i++) {
+         msf = max(nums[i], nums[i] + msf);
+         ans = max(msf, ans);
+
+      }
+      return ans;
+    }
+};`,
+
+lis:
+`class Solution {
+public:
+    int lengthOfLIS(
+        vector<int>& nums
+    ) {
+
+        vector<int> dp;
+
+        for (int num : nums) {
+
+            auto it = lower_bound(
+                    dp.begin(),
+                    dp.end(),
+                    num);
+                
+
+            if (it == dp.end()) {
+                dp.push_back(num);
+            }
+            else {
+                *it = num;
+            }
+        }
+
+        return dp.size();
+    }
+};`
+
+};
+
+let targetText = "";
+let typed = [];        // array of chars the user has typed (may differ from target)
+let startTime = null;
+let started = false;
+let finished = false;
+let totalTyped = 0;
+let numErrors = 0;
+
+const targetEl  = document.getElementById("targetText");
+const stats     = document.getElementById("stats");
+const wpmEl     = document.getElementById("wpm");
+const accEl     = document.getElementById("accuracy");
+const timeEl    = document.getElementById("time");
+const msgEl     = document.getElementById("message");
+const selector  = document.getElementById("templateSelector");
+
+function load() {
+    targetText = templates[selector.value];
+    typed = [];
+    started = false;
+    finished = false;
+    startTime = null;
+    totalTyped = 0;
+    numErrors = 0;
+    stats.style.display = "none";
+    msgEl.textContent = "";
+    render();
+}
+
+selector.onchange = load;
+load();
+
+/* ---- render: rebuild the pre char by char ---- */
+function render() {
+    const frag = document.createDocumentFragment();
+
+    for (let i = 0; i < targetText.length; i++) {
+        const span = document.createElement("span");
+        const ch = targetText[i] === "\n" ? "↵\n" : targetText[i];
+
+        if (i < typed.length) {
+            if (typed[i] === targetText[i]) {
+                span.className = "ch-correct";
+            } else {
+                span.className = "ch-wrong";
+            }
+            span.textContent = ch;
+        } else if (i === typed.length) {
+            span.className = "ch-pending ch-cursor";
+            span.textContent = ch;
+        } else {
+            span.className = "ch-pending";
+            span.textContent = ch;
+        }
+
+        frag.appendChild(span);
+    }
+
+    targetEl.textContent = "";
+    targetEl.appendChild(frag);
+}
+
+/* ---- key handling ---- */
+document.addEventListener("keydown", (e) => {
+    if (finished) return;
+
+    // ignore modifier-only keys
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    if (!started) {
+        started = true;
+        startTime = performance.now();
+        stats.style.display = "block";
+    }
+
+    if (e.key === "Backspace") {
+        e.preventDefault();
+        if (typed.length > 0) typed.pop();
+        render();
+        updateStats();
+        return;
+    }
+
+    if (e.key === "Tab") {
+        e.preventDefault();
+        // insert 4 spaces
+        for (let i = 0; i < 4; i++) pushChar(" ");
+        render();
+        updateStats();
+        return;
+    }
+
+    if (e.key === "Enter") {
+        e.preventDefault();
+        pushChar("\n");
+
+        // auto-indent: copy leading whitespace of the next line in the target
+        const nextNewline = targetText.indexOf("\n", typed.length - 1);
+        let lineStart = nextNewline + 1;
+        // if cursor is right at a newline boundary, look at the target line we just entered
+        let indent = "";
+        let j = typed.length;
+        while (j < targetText.length && (targetText[j] === " " || targetText[j] === "\t")) {
+            indent += targetText[j];
+            j++;
+        }
+        for (const c of indent) pushChar(c);
+
+        render();
+        updateStats();
+        return;
+    }
+
+    if (e.key.length === 1) {
+        e.preventDefault();
+        pushChar(e.key);
+        render();
+        updateStats();
+    }
+});
+
+function pushChar(ch) {
+    const expected = targetText[typed.length];
+    if (ch !== expected) numErrors++;
+    totalTyped++;
+    typed.push(ch);
+}
+
+function updateStats() {
+    if (!started) return;
+    const seconds = (performance.now() - startTime) / 1000;
+    const wpm = Math.max(0, ((totalTyped / 4.5) - (numErrors / 1.25)) / ((seconds + 0.001) / 60));
+
+    const correct = typed.filter((c, i) => c === targetText[i]).length;
+    const acc = totalTyped === 0 ? 100 : (correct / totalTyped) * 100;
+
+    wpmEl.textContent  = "WPM: " + wpm.toFixed(1);
+    accEl.textContent  = "Accuracy: " + acc.toFixed(1) + "%";
+    timeEl.textContent = "Time: " + seconds.toFixed(1) + "s";
+
+    // done when typed chars (ignoring whitespace) match target
+    const typedStr  = typed.join("");
+    const targetStr = targetText;
+    if (typedStr === targetStr) {
+        finished = true;
+        msgEl.textContent = "✓ Done! " + wpm.toFixed(1) + " WPM, " + acc.toFixed(1) + "% accuracy";
+    }
+}
+
+document.getElementById("resetBtn").onclick = load;
+</script>
+</body>
+</html>
